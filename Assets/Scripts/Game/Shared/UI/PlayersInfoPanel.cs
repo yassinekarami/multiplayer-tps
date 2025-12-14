@@ -7,17 +7,28 @@ using Core.Utils;
 using Photon.Realtime;
 using ExitGames.Client.Photon;
 using Game.Shared.Gameplay;
-using Core.Utils;
-using Mono.Cecil.Cil;
 
 namespace Game.Shared.UI
 {
-    public class PlayersInfoPanel : MonoBehaviour
+    public class PlayersInfoPanel : MonoBehaviour, IOnEventCallback
     {
         public GameObject playerInfo;
         GameObject[] players;
         List<Character> playerCharater = new List<Character>();
         // Start is called before the first frame update
+
+        private void Awake()
+        {
+            PhotonPeer.RegisterType(typeof(Character),(byte)100, Character.Serialize, Character.Deserialize);
+        }
+
+        /// <summary>
+        /// callBack to remove event
+        /// </summary>
+        private void OnDisable()
+        {
+            PhotonNetwork.RemoveCallbackTarget(this);
+        }
         void Start()
         {
             //characters = new List<Character>();
@@ -29,6 +40,7 @@ namespace Game.Shared.UI
         }
         private void OnEnable()
         {
+            PhotonNetwork.AddCallbackTarget(this);
             players = GameObject.FindGameObjectsWithTag(Constant.Tag.PLAYER);
             List<object> content = new List<object>();
             foreach (GameObject player in players)
@@ -41,6 +53,7 @@ namespace Game.Shared.UI
             }
 
             RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.All };
+      //      PhotonNetwork.RaiseEvent(Constant.PunEventCode.setUpPlayerInfoPanelEventCode, players[0].GetComponent<PlayerStates>().character, raiseEventOptions, SendOptions.SendReliable);
             PhotonNetwork.RaiseEvent(Constant.PunEventCode.setUpPlayerInfoPanelEventCode, content.ToArray(), raiseEventOptions, SendOptions.SendReliable);
         }
         // Update is called once per frame
@@ -59,11 +72,20 @@ namespace Game.Shared.UI
             byte eventCode = photonEvent.Code;
             if (eventCode == Constant.PunEventCode.setUpPlayerInfoPanelEventCode)
             {
-                object[] data = (object[])photonEvent.CustomData;
-                Character[] c = (Character[])data;
-                this.InstiateInfoForeachPlayer(c);
+                object[] customData = (object[])photonEvent.CustomData;
+              
+                List<Character> characters = new List<Character>();
+                foreach (object data in customData)
+                {
+                    characters.Add((Character)data);
+                }
+             
+
+                 InstiateInfoForeachPlayer(characters);
+
+
             }
-            
+
         }
 
 
@@ -71,17 +93,19 @@ namespace Game.Shared.UI
         /// instanatiate nickname and healthbar for each character present in the room
         /// </summary>
         /// <param name="characters"></param>
-        public void InstiateInfoForeachPlayer(Character[] characters)
+        public void InstiateInfoForeachPlayer(List<Character> characters)
         {
             float yOffset = -30; // distance between each item
             int index = 0;
 
-            foreach (Character character in characters)
+            foreach (Core.Model.Character character in characters)
             {
-                // playerInfo.GetComponentInChildren<Text>().text = 
+                // playerInfo.GetComponentInChildren<Text>().text =
+                playerInfo.GetComponentInChildren<Text>().text = character.nickname;
+                Debug.Log("character color " + character.color+ " color " + ColorUtils.ResolveColorFromString(character.color));
+                playerInfo.GetComponentInChildren<Image>().color = ColorUtils.ParseRGBA(character.color);
                 GameObject toInstantiate = Instantiate(playerInfo, gameObject.transform); ;
-                toInstantiate.GetComponentInChildren<Text>().text = character.nickname;
-                toInstantiate.GetComponentInChildren<Image>().color = ColorUtils.ResolveColorFromString(character.color) ;
+          
 
 
                 // Apply vertical offset

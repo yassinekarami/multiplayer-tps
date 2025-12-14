@@ -17,7 +17,6 @@ namespace Game.Shared.Gameplay
         {
 
             object[] instantiationData = info.photonView.InstantiationData;
-            //   Debug.Log("OnPhotonInstantiate " + (string)instantiationData[0]+ " parse "+ ColorUtils.ParseRGBA((string)instantiationData[0]));
             character = new Character((string)instantiationData[1], (string)instantiationData[0], 100);
             gameObject.GetComponentInChildren<Renderer>().material.color = ColorUtils.ParseRGBA(character.color);
         
