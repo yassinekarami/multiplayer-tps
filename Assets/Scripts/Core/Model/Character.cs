@@ -29,7 +29,7 @@ namespace Core.Model
         {   
 
             currentHealth = currentHealth - amount;
-            if (currentHealth < 0)
+            if (currentHealth <= 0)
             {
                 isDead = true;
             }

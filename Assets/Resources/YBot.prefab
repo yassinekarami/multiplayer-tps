@@ -722,7 +722,7 @@ GameObject:
   - component: {fileID: 3749820413396754360}
   - component: {fileID: 7119613549954261576}
   m_Layer: 0
-  m_Name: Magic circle (6)
+  m_Name: PlayerMagicCircle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -758,7 +758,7 @@ ParticleSystem:
   ringBufferMode: 0
   ringBufferLoopRange: {x: 0, y: 1}
   emitterVelocityMode: 0
-  looping: 1
+  looping: 0
   prewarm: 0
   playOnAwake: 1
   useUnscaledTime: 0
@@ -5991,11 +5991,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 59d3a9b9719d80246b5579fdd1702f24, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  Sci_Fi_Gun: {fileID: 6608327222606728454}
+  RL0N_25_low: {fileID: 2898403083974322771}
+  Bio_Integrity_Gun: {fileID: 7453605587004972822}
   cameraHolder: {fileID: 1554335316803411616}
   weaponsSound:
   - {fileID: 8300000, guid: 8720072ae4d7e9c42b137210e7606b03, type: 3}
   - {fileID: 8300000, guid: 93fba0b1bf5014543918fa775911b6a3, type: 3}
   - {fileID: 8300000, guid: 56f5b6fa20679894d8658d743a03e1e4, type: 3}
+  playerStates: {fileID: 3884390202865370545}
 --- !u!222 &2158683135149233137
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -7125,6 +7129,12 @@ MonoBehaviour:
   - Type: 4
     SynchronizeType: 0
     Name: Movement
+  - Type: 9
+    SynchronizeType: 0
+    Name: isDead
+  - Type: 9
+    SynchronizeType: 0
+    Name: isHit
   m_SynchronizeLayers:
   - SynchronizeType: 0
     LayerIndex: 0
@@ -7262,7 +7272,8 @@ MonoBehaviour:
   moveSpeed: 10
   mouseSensitivity: 5
   gravity: -9.81
-  animator: {fileID: 0}
+  animator: {fileID: 1905839457961505901}
+  weaponParent: {fileID: 1960808811353291187}
   cameraHolder: {fileID: 1554335316803411616}
   aimReference: {fileID: 2456506379771691482}
   crossHair: {fileID: 0}

@@ -23,6 +23,7 @@ namespace Core.Utils
             public const byte colorHasBeenChooseEventCode = 4;
             public const byte weaponHasBeenPickupEventCode = 5;
             public const byte updatePlayerHealthUIEventCode = 6;
+            public const byte roomPropertiesHaveToBeUpdatedEventCode = 7;
         }
 
         public enum WeaponNotificationType

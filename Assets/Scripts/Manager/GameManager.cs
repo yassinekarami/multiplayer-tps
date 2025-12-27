@@ -1,18 +1,23 @@
-using UnityEngine;
-using Photon.Pun;
-using Core.Model;
-using Photon.Realtime;
-using System.Collections.Generic;
 using Core.Event;
+using Core.Interface.PlayerInfoUI;
+using Core.Interface.ScorePanelUI;
+using Core.Interface.WeaponUI;
+using Core.Model;
 using Core.Utils;
 using ExitGames.Client.Photon;
-using Core.Interface.PlayerInfoUI;
-using Core.Interface.WeaponUI;
+using Photon.Pun;
+using Photon.Realtime;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.SocialPlatforms.Impl;
+using UnityEngine.UI;
+using Hashtable = ExitGames.Client.Photon.Hashtable;
 
 
 namespace Manager
 {
-    public class GameManager : MonoBehaviourPunCallbacks, IInRoomCallbacks
+    public class GameManager : MonoBehaviourPunCallbacks, IInRoomCallbacks, IOnEventCallback
     {
         public static List<IPlayerInfoObserver> playerInfoObservers = new List<IPlayerInfoObserver>();
         public static List<IPlayerInfoSubject> playerInfoSubjects = new List<IPlayerInfoSubject>();
@@ -24,12 +29,14 @@ namespace Manager
         public List<Character> characters = new List<Character>();
 
 
-        [SerializeField][Tooltip("out game panel")] GameObject colorSelectorPanel = null;
-        [SerializeField][Tooltip("out game panel")] GameObject waitingPanel = null;
+        [SerializeField][Tooltip("out game panel")] GameObject colorSelectorPanelUI = null;
+        [SerializeField][Tooltip("out game panel")] GameObject waitingPanelUI = null;
 
 
-        [SerializeField][Tooltip("in game panel")] GameObject inGamePanel = null;
+        [SerializeField][Tooltip("in game panel")] GameObject inGamePanelUI = null;
+        [SerializeField][Tooltip("in game panel")] static GameObject scorePanelUI = null;
         [SerializeField] GameObject level = null;
+        public GameObject playerScore;
 
         List<GameObject> spawnPoints = new List<GameObject>();
         [SerializeField] List<GameObject> weaponSpawnPoints = new List<GameObject>();
@@ -37,15 +44,18 @@ namespace Manager
         List<string> availableWeapons = new List<string>();
 
         private ExitGames.Client.Photon.Hashtable customProperties = new ExitGames.Client.Photon.Hashtable();
-        private float timer = 20;
+        private float weaponSpawnTimer = 20;
+        private bool gameHaveStarted = false;
+
 
         private void Awake()
         {
             PhotonNetwork.AutomaticallySyncScene = true;
             PhotonNetwork.AddCallbackTarget(this);
-            colorSelectorPanel = GameObject.Find("ColorSelectorPanel");
-            waitingPanel = GameObject.Find("WaitingBG");
-            inGamePanel = GameObject.Find("InGamePanel");
+            colorSelectorPanelUI = GameObject.Find("ColorSelectorPanel");
+            waitingPanelUI = GameObject.Find("WaitingBG");
+            inGamePanelUI = GameObject.Find("InGamePanel");
+            scorePanelUI = GameObject.Find("ScorePanel");
             level = GameObject.Find("Level");
 
             spawnPoints.AddRange(GameObject.FindGameObjectsWithTag(Constant.Tag.SPAWN_POINT));
@@ -53,16 +63,13 @@ namespace Manager
             availableWeapons.AddRange(new[] { "spawn/RL0N-25_low", "spawn/Sci-Fi Gun", "spawn/Bio Integrity Gun" });
         }
 
-        
-
         private void Start()
         {
-
             customProperties["readyPlayers"] = 0;
-          //level.SetActive(false);
-            inGamePanel.SetActive(false);
-            colorSelectorPanel.SetActive(true);
-            waitingPanel.SetActive(false);
+            //level.SetActive(false);
+            inGamePanelUI.SetActive(false);
+            colorSelectorPanelUI.SetActive(true);
+            waitingPanelUI.SetActive(false);
 
             PhotonNetwork.JoinRandomOrCreateRoom(null,roomOptions: setUpRoomOptions());
         }
@@ -72,8 +79,8 @@ namespace Manager
             if(PhotonNetwork.CurrentRoom != null && PhotonNetwork.CurrentRoom.CustomProperties != null &&
                 (int)PhotonNetwork.CurrentRoom.CustomProperties["readyPlayers"] == maxPlayersInRoom)
             {
-                timer -= Time.deltaTime;
-                if (timer <= 0f)
+                weaponSpawnTimer -= Time.deltaTime;
+                if (weaponSpawnTimer <= 0f)
                 {
                     Queue<GameObject> queue = new Queue<GameObject>(weaponSpawnPoints);
                     foreach (string weapon in availableWeapons)
@@ -85,7 +92,7 @@ namespace Manager
                             obj.transform.parent = pointToBeSpawnIn.transform;
                         }
                     }
-                    timer = 20f;
+                    weaponSpawnTimer = 20f;
                 }
             }
             
@@ -114,11 +121,11 @@ namespace Manager
         /// </summary>
         private void SendTheGameIsReadyEvent()
         {
-
             object[] content = new object[] { true };
             RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.All };
             PhotonNetwork.RaiseEvent(Constant.PunEventCode.theGameIsReadyEventCode, content,  raiseEventOptions, SendOptions.SendReliable);
             Debug.Log("SendTheGameIsReadyEvent is send with the code " + Constant.PunEventCode.theGameIsReadyEventCode);
+            gameHaveStarted = true;
         }
 
         /// <summary>
@@ -157,7 +164,7 @@ namespace Manager
         {
             Debug.Log("OnCreatedRoom -> room exists now");
 
-            Hashtable props = new Hashtable();
+            ExitGames.Client.Photon.Hashtable props = new Hashtable();
             props["readyPlayers"] = 0;
             PhotonNetwork.CurrentRoom.SetCustomProperties(props);
 
@@ -173,9 +180,9 @@ namespace Manager
         {
             this.characters.Add(new Character(nickname, color.ToString(), 100)); ;
             Debug.Log("create new character "+characters.Count);
-            colorSelectorPanel.SetActive(false);
-            waitingPanel.SetActive(true);
-            waitingPanel.GetComponent<WaitingPanel>().UpdateText(PhotonNetwork.CountOfPlayers.ToString(), maxPlayersInRoom.ToString());
+            colorSelectorPanelUI.SetActive(false);
+            waitingPanelUI.SetActive(true);
+            waitingPanelUI.GetComponent<WaitingPanel>().UpdateText(PhotonNetwork.CountOfPlayers.ToString(), maxPlayersInRoom.ToString());
             UpdateRoomReadyPlayer();
         }
 
@@ -192,7 +199,7 @@ namespace Manager
                 currentReady = (int)props["readyPlayers"];
             }
 
-            Hashtable updatedProps = new Hashtable();
+            Hashtable updatedProps = new ExitGames.Client.Photon.Hashtable();
             updatedProps["readyPlayers"] = currentReady + 1;
 
             PhotonNetwork.CurrentRoom.SetCustomProperties(updatedProps);
@@ -202,16 +209,52 @@ namespace Manager
         /// detect room properties updated
         /// </summary>
         /// <param name="propertiesThatChanged"></param>
-        public override void OnRoomPropertiesUpdate(Hashtable propertiesThatChanged)
+        public override void OnRoomPropertiesUpdate(ExitGames.Client.Photon.Hashtable propertiesThatChanged)
         {
-
-            if (PhotonNetwork.CurrentRoom.CustomProperties != null && 
-                (int)PhotonNetwork.CurrentRoom.CustomProperties["readyPlayers"] == maxPlayersInRoom)
+            if (!gameHaveStarted)
             {
-                Debug.Log("OnRoomPropertiesUpdate :readyPlayers " + (int)PhotonNetwork.CurrentRoom.CustomProperties["readyPlayers"]);
+                if (PhotonNetwork.CurrentRoom.CustomProperties != null &&
+                (int)PhotonNetwork.CurrentRoom.CustomProperties["readyPlayers"] == maxPlayersInRoom)
+                {
+                    Debug.Log("OnRoomPropertiesUpdate :readyPlayers " + (int)PhotonNetwork.CurrentRoom.CustomProperties["readyPlayers"]);
 
-                SendTheGameIsReadyEvent();
+                    SendTheGameIsReadyEvent();
+                }
             }
+            else
+            {
+                //before instantiating the playerScore, we need to remove all the scorePanelUI's childrens
+                foreach (Transform child in scorePanelUI.transform)
+                {
+                    Destroy(child.gameObject);
+                }
+                float yOffset = -30; // distance between each item
+                int index = 0;
+                foreach (DictionaryEntry entry in PhotonNetwork.CurrentRoom.CustomProperties)
+                {
+                    if (!entry.Key.Equals("readyPlayers"))
+                    {
+                        playerScore.transform.GetChild(0).GetComponent<Text>().text = (string)entry.Key;
+     
+                        playerScore.transform.GetChild(1).GetComponent<Text>().text = (string)entry.Value;
+
+                        // Apply vertical offset
+                        playerScore.GetComponent<RectTransform>().anchoredPosition +=
+                            new Vector2(0, index * yOffset);
+
+                        GameObject obj = PhotonNetwork.Instantiate("playerScore", scorePanelUI.transform.position, Quaternion.identity, 0);
+                        obj.transform.parent = scorePanelUI.transform;
+
+                        index++;
+                    } 
+                }
+              
+
+              
+
+                Debug.Log("OnRoomPropertiesUpdate : other property changed");
+            }
+           
         }
         /// <summary>
         /// enable the level and instantiate the character through the network
@@ -219,7 +262,7 @@ namespace Manager
         public void EnableLevel()
         {
             level.SetActive(true);
-            waitingPanel.SetActive(false);
+            waitingPanelUI.SetActive(false);
 
             foreach (Character character in characters)
             {
@@ -228,13 +271,114 @@ namespace Manager
                     character.color.ToString(), character.nickname
                 };
                 Queue<GameObject> queue = new Queue<GameObject>(spawnPoints);
-
                 GameObject obj = PhotonNetwork.Instantiate("Ybot", queue.Dequeue().transform.position, Quaternion.identity, 0, data);
             }
-            inGamePanel.SetActive(true);
+     //       Player[] players = PhotonNetwork.PlayerList;
+     //       InstantiateScorePanelForeachPlayer(players);
+            inGamePanelUI.SetActive(true);
         }
 
-        
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="photonEvent"></param>
+        public void OnEvent(EventData photonEvent)
+        {
+            byte eventCode = photonEvent.Code;
+            if (eventCode == Constant.PunEventCode.roomPropertiesHaveToBeUpdatedEventCode)
+            {
+                object[] data = (object[])photonEvent.CustomData;
+                string nickname = (string)data[0];
+                int score = (int)data[1];
+                ExitGames.Client.Photon.Hashtable properties = PhotonNetwork.CurrentRoom.CustomProperties;
+                if (properties != null)
+                {
+                    if (properties.ContainsKey(nickname))
+                    {
+                        Debug.Log("Score Updated: " + properties[nickname]);
+                        properties[nickname] = score.ToString();
+                    }
+                    else
+                    {
+                        properties.Add(nickname, score.ToString());
+                    }
+                    PhotonNetwork.CurrentRoom.SetCustomProperties(properties);
+                }
+            }
+            //if (eventCode == Constant.PunEventCode.playerPropertiesUpdateEventCode)
+            //{
+            //    Debug.Log("playerPropertiesUpdateEventCode received");
+
+            //    if (photonEvent.CustomData is object[] data && data.Length > 0)
+            //    {
+            //        Debug.Log(data);
+            //        Debug.Log(data[0]);
+
+            //        if (data[0] is Dictionary<object, object> dictionary)
+            //        {
+            //            foreach (var key in dictionary.Keys)
+            //            {
+            //                Debug.Log($"Key: {key}, Value: {dictionary[key]}");
+            //                   // Appeler la méthode pour instancier le panneau de score
+            //                InstantiateScorePanelForeachPlayer((string)key, (string)dictionary[key]);
+            //            }
+
+            //        }
+            //        else
+            //        {
+            //            Debug.LogError("data[0] is not a Dictionary<object, object>");
+            //        }
+            //    }
+            //    else
+            //    {
+            //        Debug.LogError("photonEvent.CustomData is not a valid object array or is empty.");
+            //    }
+            //}
+        }
+
+        /// <summary>
+        /// instantiate nickname and health bar for each character present in the room
+        /// </summary>
+        /// <param name="characters"></param>
+        public void InstantiateScorePanelForeachPlayer(string nickname, string score)
+        {
+            float yOffset = -30; // distance entre chaque élément
+            int index = 0;
+
+            Debug.Log($"Key: {nickname}, Value: {score}");
+
+            // Vérifie si les composants nécessaires existent avant de les utiliser
+            Text nicknameText = playerScore.transform.GetChild(0).GetComponent<Text>();
+            Text scoreText = playerScore.transform.GetChild(1).GetComponent<Text>();
+
+            if (nicknameText != null && scoreText != null)
+            {
+                GameObject toInstantiate = Instantiate(playerScore, gameObject.transform);
+                toInstantiate.transform.parent = scorePanelUI.transform;
+
+                // Applique un décalage vertical
+                toInstantiate.GetComponent<RectTransform>().anchoredPosition +=
+                    new Vector2(0, index * yOffset);
+
+                index++;
+            }
+            else
+            {
+                Debug.LogError("Nickname or Score Text component is missing on the score GameObject.");
+            }
+        }
+
+        public static void ToggleScorePanel()
+        {
+            if (scorePanelUI.activeSelf)
+            {
+                scorePanelUI.SetActive(false);
+            }
+            else
+            {
+                scorePanelUI.SetActive(true);
+            }
+        }
     }
 }
 

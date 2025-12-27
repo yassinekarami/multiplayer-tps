@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Core.Interface.WeaponUI;
@@ -24,23 +23,14 @@ namespace Game.Shared.UI.WeaponUI
             weaponIcon = GetComponent<Image>();
         }
 
-        // Update is called once per frame
-        void Update()
-        {
-
-        }
-
         public void OnNotify(Constant.WeaponNotificationType type, int currentAmmo, int index)
-        {   Debug.Log($"WeaponUI OnNotify called with type: {type} and currentAmmo: {currentAmmo}");
-
+        {   
             if (type.Equals(Constant.WeaponNotificationType.WEAPON_CHANGE))
             {
-                Debug.Log($"WeaponUI received ammo change notification. Current Ammo: {currentAmmo}");
                 weaponIcon.sprite = weaponIcons[index];
                 ammoAmount.text = currentAmmo.ToString();
             } else  if (type.Equals(Constant.WeaponNotificationType.WEAPON_AMMO_UPDATE))
             {
-                Debug.Log($"WeaponUI received ammo decrease notification. Current Ammo: {currentAmmo}");
                 ammoAmount.text = currentAmmo.ToString();
                
             }

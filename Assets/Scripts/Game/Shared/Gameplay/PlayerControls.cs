@@ -1,5 +1,7 @@
 ﻿
 using Cinemachine;
+using Core.Interface.ScorePanelUI;
+using Manager;
 using Photon.Pun;
 using System.Threading;
 using UnityEngine;
@@ -18,7 +20,7 @@ namespace Game.Shared.Gameplay
         private Camera playerCamera;
         private CinemachineVirtualCamera virtualCamera;
 
-        private GameObject weaponParent;
+        public GameObject weaponParent;
         private Vector3 mouseWorldPosition;
         private Vector3 mousePosition;
 
@@ -37,8 +39,6 @@ namespace Game.Shared.Gameplay
             {
                 crossHair = GameObject.Find("CrossHair");
                 controller = GetComponent<CharacterController>();
-                animator = GetComponent<Animator>();
-                weaponParent = GameObject.Find("Weapons");
                 cameraHolder.SetActive(true);
                 playerCamera = cameraHolder.GetComponentInChildren<Camera>();
                 virtualCamera = GameObject.Find("VirtualCamera").GetComponent<CinemachineVirtualCamera>();
@@ -104,6 +104,9 @@ namespace Game.Shared.Gameplay
 
             if (Input.GetMouseButtonDown(1))
                 ChangeWeapon();
+
+            if (Input.GetKeyDown(KeyCode.K))
+                OpenScorePanel();
         }
 
         private void Shot()
@@ -115,6 +118,12 @@ namespace Game.Shared.Gameplay
         {
             weaponParent.GetComponent<WeaponHandler>().ChangeWeapon();
             // notify weapon UI observers
+        }
+
+        private void OpenScorePanel()
+        {
+            GameManager.ToggleScorePanel();
+
         }
     }
 

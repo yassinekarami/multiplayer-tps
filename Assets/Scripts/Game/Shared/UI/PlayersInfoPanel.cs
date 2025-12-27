@@ -93,7 +93,6 @@ namespace Game.Shared.UI
             }
             else if (eventCode == Constant.PunEventCode.updatePlayerHealthUIEventCode)
             {
-                Debug.Log("PlayersInfoPanel received updatePlayerHealthUIEventCode event.");
                 object[] data = (object[])photonEvent.CustomData;
                 string nickName = (string)data[0];
                 float currentHealth = (float)data[1];
@@ -101,7 +100,6 @@ namespace Game.Shared.UI
                 var playerInfoEntry = playerInfoDictionary.FirstOrDefault(entry => entry.Key.Equals(nickName));
                 if (playerInfoEntry.Key != null)
                 {
-                    Debug.Log(currentHealth + "value to be update " + currentHealth / 100);
                     playerInfoEntry.Value.GetComponentInChildren<Image>().fillAmount = currentHealth/100;
                 }
                 else

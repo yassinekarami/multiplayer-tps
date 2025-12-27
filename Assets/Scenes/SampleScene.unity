@@ -994,6 +994,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: YBot (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 4500705726508712450, guid: 3c1a7005e0b69ce46beab698ad6d3bc8,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5091087829720261421, guid: 3c1a7005e0b69ce46beab698ad6d3bc8,
         type: 3}
       propertyPath: sceneViewId
@@ -1291,36 +1296,11 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 751328359510035112, guid: 3c1a7005e0b69ce46beab698ad6d3bc8,
-        type: 3}
-      propertyPath: m_Name
-      value: PlayerMagicCircle
-      objectReference: {fileID: 0}
     - target: {fileID: 1312284515829413597, guid: 3c1a7005e0b69ce46beab698ad6d3bc8,
         type: 3}
       propertyPath: sceneViewId
       value: 4
       objectReference: {fileID: 0}
-    - target: {fileID: 3372064074541635850, guid: 3c1a7005e0b69ce46beab698ad6d3bc8,
-        type: 3}
-      propertyPath: weaponsSound.Array.size
-      value: 3
-      objectReference: {fileID: 0}
-    - target: {fileID: 3372064074541635850, guid: 3c1a7005e0b69ce46beab698ad6d3bc8,
-        type: 3}
-      propertyPath: weaponsSound.Array.data[0]
-      value: 
-      objectReference: {fileID: 8300000, guid: 8720072ae4d7e9c42b137210e7606b03, type: 3}
-    - target: {fileID: 3372064074541635850, guid: 3c1a7005e0b69ce46beab698ad6d3bc8,
-        type: 3}
-      propertyPath: weaponsSound.Array.data[1]
-      value: 
-      objectReference: {fileID: 8300000, guid: 93fba0b1bf5014543918fa775911b6a3, type: 3}
-    - target: {fileID: 3372064074541635850, guid: 3c1a7005e0b69ce46beab698ad6d3bc8,
-        type: 3}
-      propertyPath: weaponsSound.Array.data[2]
-      value: 
-      objectReference: {fileID: 8300000, guid: 56f5b6fa20679894d8658d743a03e1e4, type: 3}
     - target: {fileID: 3406320116504279224, guid: 3c1a7005e0b69ce46beab698ad6d3bc8,
         type: 3}
       propertyPath: m_RootOrder
@@ -1374,11 +1354,6 @@ PrefabInstance:
     - target: {fileID: 3406320116504279224, guid: 3c1a7005e0b69ce46beab698ad6d3bc8,
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3749820413396754360, guid: 3c1a7005e0b69ce46beab698ad6d3bc8,
-        type: 3}
-      propertyPath: looping
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4500705726508712450, guid: 3c1a7005e0b69ce46beab698ad6d3bc8,

@@ -1,13 +1,18 @@
+using Core.Event;
+using Core.Interface.WeaponUI;
+using Core.Model;
+using Core.Utils;
+using ExitGames.Client.Photon;
+using ExitGames.Client.Photon.StructWrapping;
+using Manager;
+using Photon.Pun;
+using Photon.Realtime;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
-using Core.Model;
 using System.Linq;
-using Core.Event;
-using ExitGames.Client.Photon.StructWrapping;
-using Core.Interface.WeaponUI;
+using UnityEngine;
+using UnityEngine.SocialPlatforms.Impl;
 using static Core.Utils.Constant;
-using Manager;
 namespace Game.Shared.Gameplay {
 
     public class WeaponHandler : MonoBehaviour, IWeaponUISubject
@@ -18,7 +23,11 @@ namespace Game.Shared.Gameplay {
         Weapon secondWeapon = new Weapon(1, "RL0N-25_low", 30, false, 20, 1);
         Weapon thirdWeapon = new Weapon(2, "Bio Integrity Gun", 30, false, 30, 2);
 
-        
+        [Header("Weapons GameObjects")]
+        public GameObject Sci_Fi_Gun;
+        public GameObject RL0N_25_low;
+        public GameObject Bio_Integrity_Gun;
+
 
         Weapon currentWeapon;
         private Camera playerCamera;
@@ -26,16 +35,16 @@ namespace Game.Shared.Gameplay {
         public List<AudioClip> weaponsSound = new List<AudioClip>();
         private AudioSource audioSource;
 
-
+        public PlayerStates playerStates;
         private void Awake()
         {
+            if(GetComponentInParent<PhotonView>() == null || !GetComponentInParent<PhotonView>().IsMine) return;
 
             GameManager.weaponUISubject.Add(this);
-
-            weaponsDictionary.Add(firstWeapon, GameObject.Find("Sci-Fi Gun"));
-            weaponsDictionary.Add(secondWeapon, GameObject.Find("RL0N-25_low"));
-            weaponsDictionary.Add(thirdWeapon, GameObject.Find("Bio Integrity Gun"));
-
+           
+            weaponsDictionary.Add(firstWeapon, Sci_Fi_Gun);
+            weaponsDictionary.Add(secondWeapon, RL0N_25_low);
+            weaponsDictionary.Add(thirdWeapon, Bio_Integrity_Gun);
 
             foreach (KeyValuePair<Weapon, GameObject> entry in weaponsDictionary)
             {
@@ -52,6 +61,13 @@ namespace Game.Shared.Gameplay {
 
         public void Shot()
         {
+            //  PhotonNetwork.LocalPlayer.SetCustomProperties(new ExitGames.Client.Photon.Hashtable { { "nickname" , playerStates.character.nickname}, { "score" , "1"} });
+
+            object[] content = new object[] { playerStates.character.nickname, playerStates.character.score + 1 };
+
+            RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.All };
+            PhotonNetwork.RaiseEvent(Constant.PunEventCode.roomPropertiesHaveToBeUpdatedEventCode, content, raiseEventOptions, SendOptions.SendReliable);
+
             if (currentWeapon.currentAmo <= 0)
             {
                 Debug.Log("no more amo");
@@ -65,15 +81,42 @@ namespace Game.Shared.Gameplay {
                 audioSource.PlayOneShot(weaponsSound[currentWeapon.weaponSoundIndex]);
                 RaycastHit hit;
                 Physics.Raycast(playerCamera.ScreenPointToRay(Input.mousePosition), out hit, 100);
-                Debug.Log("hit object "+hit.collider);
                 if (hit.collider != null)
                 {
                     Debug.Log(hit.collider);
-           //         PlayerGotShotEvent.onPlayerShot?.Invoke(currentWeapon.damage);
                  
                     if (hit.collider.gameObject.GetComponentInParent<PlayerStates>() != null)
                     {
-                        hit.collider.gameObject.GetComponentInParent<PlayerStates>().decreaseHealth(currentWeapon.damage);
+                        bool isDead = hit.collider.gameObject.GetComponentInParent<PlayerStates>().decreaseHealth(currentWeapon.damage);
+                        if (isDead)
+                        {
+                            hit.collider.gameObject.GetComponentInParent<PlayerControls>().animator.SetTrigger("isDead");
+                            int score = playerStates.character.score + 1;
+                      //      PhotonNetwork.LocalPlayer.SetCustomProperties(new ExitGames.Client.Photon.Hashtable { { playerStates.character.nickname, score.ToString() } });
+                     //       PhotonNetwork.LocalPlayer.SetCustomProperties(new ExitGames.Client.Photon.Hashtable {  {playerStates.character.nickname.ToString(), score.ToString()} });
+                      //      PhotonNetwork.CurrentRoom.SetCustomProperties(new ExitGames.Client.Photon.Hashtable { { playerStates.character.nickname.ToString(), score.ToString() } });
+                            //ExitGames.Client.Photon.Hashtable properties = PhotonNetwork.CurrentRoom.CustomProperties;
+                            //if (properties != null) { 
+                            //    if (properties.ContainsKey(playerStates.character.nickname.ToString()))
+                            //    {
+                            //        Debug.Log("Score Updated: " + properties[playerStates.character.nickname.ToString()]);
+                            //        properties[playerStates.character.nickname.ToString()] = score.ToString();
+                            //    } else
+                            //    {
+                            //        properties.Add(playerStates.character.nickname.ToString(), score.ToString());
+                            //    }
+                            //    PhotonNetwork.CurrentRoom.SetCustomProperties(properties);
+                            //}
+
+
+                            //object[] content = new object[] { playerStates.character.nickname, playerStates.character.score + 1 };
+                            //RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.All };
+                            //PhotonNetwork.RaiseEvent(Constant.PunEventCode.roomPropertiesHaveToBeUpdatedEventCode, content, raiseEventOptions, SendOptions.SendReliable);
+                        }
+                        else
+                        {
+                            hit.collider.gameObject.GetComponentInParent<PlayerControls>().animator.Play("Rib Hit");
+                        }
                     }
                 }
             }

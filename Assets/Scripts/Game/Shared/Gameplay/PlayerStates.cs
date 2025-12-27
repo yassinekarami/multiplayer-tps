@@ -23,18 +23,11 @@ namespace Game.Shared.Gameplay
         }
 
 
-        public void decreaseHealth(int amount)
+        public bool decreaseHealth(int amount)
         {
-            Debug.Log(gameObject.name +" has been shot "+ amount);
             isDead = this.character.decreaseHealth(amount);
-            if (isDead)
-            {
-                Debug.Log(gameObject.name + " is dead!");
-                // handle player death logic here
-            //    GetComponent<PlayerControls>().animator.SetTrigger("isDead");
-            }
             this.NotifyObservers(character.nickname, character.currentHealth);
-            Debug.Log("remaining health " + this.character.currentHealth);
+            return isDead;
         }
 
         public void RegisterObserver(IPlayerInfoObserver observer)
