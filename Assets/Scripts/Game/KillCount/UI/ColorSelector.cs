@@ -100,12 +100,37 @@ namespace Game.KillCount.UI
                 object[] data = (object[])photonEvent.CustomData;
                 string button = (string)data[0];
 
-                GameObject buttonGameObject = GameObject.Find(button);
-                if (buttonGameObject != null && buttonGameObject.GetComponent<Button>())
+                try
                 {
-                    GameObject.Find(button).GetComponent<Button>().interactable = false;
+                    photonView.RPC("RPC_SetButtonInteractable", RpcTarget.AllBuffered, button, false);
                     CreatePlayerEvent.onColorChoosed?.Invoke(PhotonNetwork.LocalPlayer.NickName, ColorUtils.ResolveColorFromString(button));
+
+                } catch (System.Exception e)
+                {
+                    Debug.LogError("Error processing color choice event: " + e.Message);
                 }
+              
+            }
+        }
+
+
+        /// <summary>
+        /// Synchronizes the interactable state of a UI button across all clients in the networked session.
+        /// </summary>
+        /// <remarks>This method is intended to be called remotely via Photon Unity Networking (PUN) to
+        /// ensure consistent UI state across all players. If the specified button is not found or does not have a
+        /// Button component, no action is taken.</remarks>
+        /// <param name="buttonName">The name of the button GameObject to update. Must correspond to an existing GameObject with a Button
+        /// component.</param>
+        /// <param name="isInteractable">A value indicating whether the button should be interactable. Set to <see langword="true"/> to enable
+        /// interaction; otherwise, <see langword="false"/>.</param>
+        [PunRPC]
+        public void RPC_SetButtonInteractable(string buttonName, bool isInteractable)
+        {
+            GameObject buttonGameObject = GameObject.Find(buttonName);
+            if (buttonGameObject != null && buttonGameObject.GetComponent<Button>())
+            {
+                buttonGameObject.GetComponent<Button>().interactable = isInteractable;
             }
         }
     }

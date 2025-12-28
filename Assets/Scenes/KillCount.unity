@@ -325,6 +325,7 @@ GameObject:
   - component: {fileID: 1156553944}
   - component: {fileID: 1156553945}
   - component: {fileID: 1156553946}
+  - component: {fileID: 1156553947}
   m_Layer: 0
   m_Name: Manager
   m_TagString: Untagged
@@ -359,7 +360,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8d649b845ef576649b63b57382af6be1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxPlayersInRoom: 2
+  maxPlayersInRoom: 1
   colorSelectorPanelUI: {fileID: 0}
   waitingPanelUI: {fileID: 0}
   inGamePanelUI: {fileID: 0}
@@ -379,6 +380,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 309c287776b9eac4d8a0780a89ca5b2e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &1156553947
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1156553943}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa584fbee541324448dd18d8409c7a41, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ObservedComponentsFoldoutOpen: 1
+  Group: 0
+  prefixField: -1
+  Synchronization: 3
+  OwnershipTransfer: 0
+  observableSearch: 2
+  ObservedComponents: []
+  sceneViewId: 3
+  InstantiationId: 0
+  isRuntimeInstantiated: 0
 --- !u!1 &1181136878
 GameObject:
   m_ObjectHideFlags: 3

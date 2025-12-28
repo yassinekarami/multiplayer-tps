@@ -1,4 +1,6 @@
 
+using UnityEditor.Rendering;
+
 namespace Core.Utils
 {
     /// <summary>
@@ -17,13 +19,13 @@ namespace Core.Utils
         /// </summary>
         public static class PunEventCode
         {
-            public const byte updateTextEventCode = 1; 
+            public const byte updateWaitingPanelUIEventCode = 1; 
             public const byte theGameIsReadyEventCode = 2;
             public const byte setUpPlayerInfoPanelEventCode = 3;
             public const byte colorHasBeenChooseEventCode = 4;
             public const byte weaponHasBeenPickupEventCode = 5;
             public const byte updatePlayerHealthUIEventCode = 6;
-            public const byte roomPropertiesHaveToBeUpdatedEventCode = 7;
+            public const byte playerHaveBeenKilledEventCode = 7;
         }
 
         public enum WeaponNotificationType

@@ -55,6 +55,9 @@ MonoBehaviour:
   - MessageOff
   - ResetForReplay
   - UpdateColorSelectorPanel
+  - RPC_DecreaseHealth
+  - ResetPlayer
+  - RPC_SetButtonInteractable
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 1

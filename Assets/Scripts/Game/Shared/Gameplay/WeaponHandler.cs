@@ -61,12 +61,6 @@ namespace Game.Shared.Gameplay {
 
         public void Shot()
         {
-            //  PhotonNetwork.LocalPlayer.SetCustomProperties(new ExitGames.Client.Photon.Hashtable { { "nickname" , playerStates.character.nickname}, { "score" , "1"} });
-
-            object[] content = new object[] { playerStates.character.nickname, playerStates.character.score + 1 };
-
-            RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.All };
-            PhotonNetwork.RaiseEvent(Constant.PunEventCode.roomPropertiesHaveToBeUpdatedEventCode, content, raiseEventOptions, SendOptions.SendReliable);
 
             if (currentWeapon.currentAmo <= 0)
             {
@@ -87,40 +81,19 @@ namespace Game.Shared.Gameplay {
                  
                     if (hit.collider.gameObject.GetComponentInParent<PlayerStates>() != null)
                     {
-                        bool isDead = hit.collider.gameObject.GetComponentInParent<PlayerStates>().decreaseHealth(currentWeapon.damage);
-                        if (isDead)
+                       
+                        if (hit.collider.gameObject.GetComponentInParent<PlayerStates>() != null)
                         {
-                            hit.collider.gameObject.GetComponentInParent<PlayerControls>().animator.SetTrigger("isDead");
-                            int score = playerStates.character.score + 1;
-                      //      PhotonNetwork.LocalPlayer.SetCustomProperties(new ExitGames.Client.Photon.Hashtable { { playerStates.character.nickname, score.ToString() } });
-                     //       PhotonNetwork.LocalPlayer.SetCustomProperties(new ExitGames.Client.Photon.Hashtable {  {playerStates.character.nickname.ToString(), score.ToString()} });
-                      //      PhotonNetwork.CurrentRoom.SetCustomProperties(new ExitGames.Client.Photon.Hashtable { { playerStates.character.nickname.ToString(), score.ToString() } });
-                            //ExitGames.Client.Photon.Hashtable properties = PhotonNetwork.CurrentRoom.CustomProperties;
-                            //if (properties != null) { 
-                            //    if (properties.ContainsKey(playerStates.character.nickname.ToString()))
-                            //    {
-                            //        Debug.Log("Score Updated: " + properties[playerStates.character.nickname.ToString()]);
-                            //        properties[playerStates.character.nickname.ToString()] = score.ToString();
-                            //    } else
-                            //    {
-                            //        properties.Add(playerStates.character.nickname.ToString(), score.ToString());
-                            //    }
-                            //    PhotonNetwork.CurrentRoom.SetCustomProperties(properties);
-                            //}
-
-
-                            //object[] content = new object[] { playerStates.character.nickname, playerStates.character.score + 1 };
-                            //RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.All };
-                            //PhotonNetwork.RaiseEvent(Constant.PunEventCode.roomPropertiesHaveToBeUpdatedEventCode, content, raiseEventOptions, SendOptions.SendReliable);
-                        }
-                        else
-                        {
-                            hit.collider.gameObject.GetComponentInParent<PlayerControls>().animator.Play("Rib Hit");
+                            PhotonView targetPhotonView = hit.collider.gameObject.GetComponentInParent<PhotonView>();
+                            if (targetPhotonView != null)
+                            {
+                                // Appeler le RPC pour synchroniser la santé
+                                targetPhotonView.RPC("RPC_DecreaseHealth", RpcTarget.All, currentWeapon.damage, playerStates.character.nickname);
+                            }
                         }
                     }
                 }
             }
-
         }
         
 

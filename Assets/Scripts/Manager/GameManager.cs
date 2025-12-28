@@ -5,6 +5,7 @@ using Core.Interface.WeaponUI;
 using Core.Model;
 using Core.Utils;
 using ExitGames.Client.Photon;
+using Game.Shared.Gameplay;
 using Photon.Pun;
 using Photon.Realtime;
 using System.Collections;
@@ -47,7 +48,6 @@ namespace Manager
         private float weaponSpawnTimer = 20;
         private bool gameHaveStarted = false;
 
-
         private void Awake()
         {
             PhotonNetwork.AutomaticallySyncScene = true;
@@ -66,7 +66,7 @@ namespace Manager
         private void Start()
         {
             customProperties["readyPlayers"] = 0;
-            //level.SetActive(false);
+            scorePanelUI.SetActive(false);
             inGamePanelUI.SetActive(false);
             colorSelectorPanelUI.SetActive(true);
             waitingPanelUI.SetActive(false);
@@ -107,13 +107,6 @@ namespace Manager
             // joined a room successfully
             Debug.Log("joined room" + PhotonNetwork.CurrentRoom + " current player " + PhotonNetwork.CurrentRoom.PlayerCount);
             CreatePlayerEvent.onColorChoosed += CreateCharacter;
-      
-            if (PhotonNetwork.CurrentRoom.PlayerCount == maxPlayersInRoom)
-            {
-      
-                Debug.Log("the game start , number of players " + PhotonNetwork.CurrentRoom.PlayerCount);
-
-            }
         }
 
         /// <summary>
@@ -182,7 +175,12 @@ namespace Manager
             Debug.Log("create new character "+characters.Count);
             colorSelectorPanelUI.SetActive(false);
             waitingPanelUI.SetActive(true);
-            waitingPanelUI.GetComponent<WaitingPanel>().UpdateText(PhotonNetwork.CountOfPlayers.ToString(), maxPlayersInRoom.ToString());
+
+            string newText =  "Waiting for players to join : $ / %".Replace("$", PhotonNetwork.CountOfPlayers.ToString()).Replace("%", maxPlayersInRoom.ToString());
+            object[] content = new object[] { newText };
+            RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.All };
+            PhotonNetwork.RaiseEvent(Constant.PunEventCode.updateWaitingPanelUIEventCode, content, raiseEventOptions, SendOptions.SendReliable);
+      
             UpdateRoomReadyPlayer();
         }
 
@@ -272,9 +270,9 @@ namespace Manager
                 };
                 Queue<GameObject> queue = new Queue<GameObject>(spawnPoints);
                 GameObject obj = PhotonNetwork.Instantiate("Ybot", queue.Dequeue().transform.position, Quaternion.identity, 0, data);
+                obj.name = character.nickname;
             }
-     //       Player[] players = PhotonNetwork.PlayerList;
-     //       InstantiateScorePanelForeachPlayer(players);
+
             inGamePanelUI.SetActive(true);
         }
 
@@ -285,11 +283,14 @@ namespace Manager
         public void OnEvent(EventData photonEvent)
         {
             byte eventCode = photonEvent.Code;
-            if (eventCode == Constant.PunEventCode.roomPropertiesHaveToBeUpdatedEventCode)
+            if (eventCode == Constant.PunEventCode.playerHaveBeenKilledEventCode)
             {
                 object[] data = (object[])photonEvent.CustomData;
                 string nickname = (string)data[0];
                 int score = (int)data[1];
+                string killedNickname = (string)data[2];
+
+                StartCoroutine(ResetKilledPlayer(killedNickname));
                 ExitGames.Client.Photon.Hashtable properties = PhotonNetwork.CurrentRoom.CustomProperties;
                 if (properties != null)
                 {
@@ -305,35 +306,31 @@ namespace Manager
                     PhotonNetwork.CurrentRoom.SetCustomProperties(properties);
                 }
             }
-            //if (eventCode == Constant.PunEventCode.playerPropertiesUpdateEventCode)
-            //{
-            //    Debug.Log("playerPropertiesUpdateEventCode received");
+        }
 
-            //    if (photonEvent.CustomData is object[] data && data.Length > 0)
-            //    {
-            //        Debug.Log(data);
-            //        Debug.Log(data[0]);
+        /// <summary>
+        /// Resets a killed player after a delay, re-enabling their controls and respawning them at a random spawn
+        /// point.
+        /// </summary>
+        /// <remarks>This method should be started as a coroutine. The player is respawned 5 seconds after
+        /// being killed. If the specified player GameObject is not found or does not have a PlayerControls component,
+        /// no action is taken.</remarks>
+        /// <param name="name">The name of the player GameObject to reset. Must correspond to an existing GameObject in the scene.</param>
+        /// <returns>An enumerator that performs the reset operation after a delay. Intended for use with Unity coroutines.</returns>
+        IEnumerator ResetKilledPlayer(string name)
+        {
+            Debug.Log("ResetKilledPlayer for " + name);
+            GameObject player = GameObject.Find(name);
+            Debug.Log("Found player: " + player);
+            Debug.Log(" PlayerStates " + player.GetComponent<PlayerStates>());
+            yield return new WaitForSeconds(2);
+        
+            if (player && player.GetComponents<PlayerStates>() != null)
+            {
+            //    player.GetComponents<PlayerStates>().ResetPlayer(spawnPoints[Random.Range(0, spawnPoints.Count)].transform.position);
+                photonView.RPC("ResetPlayer", RpcTarget.All, spawnPoints[Random.Range(0, spawnPoints.Count)].transform.position);
+            }
 
-            //        if (data[0] is Dictionary<object, object> dictionary)
-            //        {
-            //            foreach (var key in dictionary.Keys)
-            //            {
-            //                Debug.Log($"Key: {key}, Value: {dictionary[key]}");
-            //                   // Appeler la méthode pour instancier le panneau de score
-            //                InstantiateScorePanelForeachPlayer((string)key, (string)dictionary[key]);
-            //            }
-
-            //        }
-            //        else
-            //        {
-            //            Debug.LogError("data[0] is not a Dictionary<object, object>");
-            //        }
-            //    }
-            //    else
-            //    {
-            //        Debug.LogError("photonEvent.CustomData is not a valid object array or is empty.");
-            //    }
-            //}
         }
 
         /// <summary>
@@ -368,6 +365,12 @@ namespace Manager
             }
         }
 
+        /// <summary>
+        /// Toggles the visibility of the score panel user interface.
+        /// </summary>
+        /// <remarks>If the score panel is currently visible, this method hides it; if it is hidden, the
+        /// method makes it visible. This method is typically used to show or hide the score panel in response to user
+        /// actions, such as pressing a button.</remarks>
         public static void ToggleScorePanel()
         {
             if (scorePanelUI.activeSelf)
