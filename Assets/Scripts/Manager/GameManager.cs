@@ -68,7 +68,7 @@ namespace Manager
             customProperties["readyPlayers"] = 0;
             scorePanelUI.SetActive(false);
             inGamePanelUI.SetActive(false);
-            colorSelectorPanelUI.SetActive(true);
+            colorSelectorPanelUI.SetActive(false);
             waitingPanelUI.SetActive(false);
 
             PhotonNetwork.JoinRandomOrCreateRoom(null,roomOptions: setUpRoomOptions());
@@ -106,7 +106,9 @@ namespace Manager
             Debug.Log("Properties = " + PhotonNetwork.CurrentRoom.MaxPlayers);
             // joined a room successfully
             Debug.Log("joined room" + PhotonNetwork.CurrentRoom + " current player " + PhotonNetwork.CurrentRoom.PlayerCount);
+            colorSelectorPanelUI.SetActive(true);
             CreatePlayerEvent.onColorChoosed += CreateCharacter;
+        
         }
 
         /// <summary>
