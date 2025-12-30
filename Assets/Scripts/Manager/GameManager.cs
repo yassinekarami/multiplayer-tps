@@ -115,18 +115,6 @@ namespace Manager
         }
 
         /// <summary>
-        /// 
-        /// </summary>
-        private void SendUpdateWaitingPanelEvent()
-        {
-            object[] content = new object[] { $"Waiting for players to join : {PhotonNetwork.CurrentRoom.PlayerCount} / {PhotonNetwork.CurrentRoom.MaxPlayers}" };
-            RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.All, CachingOption = EventCaching.AddToRoomCache };
-            PhotonNetwork.RaiseEvent(Constant.PunEventCode.updateWaitingPanelUIEventCode, content, raiseEventOptions, SendOptions.SendReliable);
-            Debug.Log("SendTheGameIsReadyEvent is send with the code " + Constant.PunEventCode.updateWaitingPanelUIEventCode);
-
-        }
-
-        /// <summary>
         /// send an event to display enter and exit button to enter or leave the arena
         /// </summary>
         private void SendTheGameIsReadyEvent()
@@ -218,6 +206,7 @@ namespace Manager
 
             Hashtable updatedProps = new ExitGames.Client.Photon.Hashtable();
             updatedProps["readyPlayers"] = currentReady + 1;
+            updatedProps["waitingMessage"] = $"Waiting for players to join : {updatedProps["readyPlayers"]} / {PhotonNetwork.CurrentRoom.MaxPlayers}";
 
             PhotonNetwork.CurrentRoom.SetCustomProperties(updatedProps);
         }
@@ -236,9 +225,6 @@ namespace Manager
                     Debug.Log("OnRoomPropertiesUpdate :readyPlayers " + (int)PhotonNetwork.CurrentRoom.CustomProperties["readyPlayers"]);
 
                     SendTheGameIsReadyEvent();
-                } else
-                {
-                    SendUpdateWaitingPanelEvent();
                 }
             }
             else
@@ -275,10 +261,7 @@ namespace Manager
                 {
                     character.color.ToString(), character.nickname
                 };
-                if (PhotonNetwork.IsMasterClient)
-                {
-                    GameObject obj = PhotonNetwork.Instantiate("Ybot", spawnPoints[Random.Range(0, spawnPoints.Count)].transform.position, Quaternion.identity, 0, data);
-                }  
+                GameObject obj = PhotonNetwork.Instantiate("Ybot", spawnPoints[Random.Range(0, spawnPoints.Count)].transform.position, Quaternion.identity, 0, data);
             }
 
             inGamePanelUI.SetActive(true);

@@ -5,7 +5,7 @@ using ExitGames.Client.Photon;
 using Photon.Realtime;
 using Core.Utils;
 
-public class WaitingPanel : MonoBehaviour, IOnEventCallback
+public class WaitingPanel : MonoBehaviourPunCallbacks, IOnEventCallback
 {
 
     [SerializeField]  Text waitingForPlayerText;
@@ -31,6 +31,11 @@ public class WaitingPanel : MonoBehaviour, IOnEventCallback
     private void OnEnable()
     {
         PhotonNetwork.AddCallbackTarget(this);
+        if (PhotonNetwork.CurrentRoom != null && PhotonNetwork.CurrentRoom.CustomProperties["waitingMessage"] != null)
+        {
+            waitingForPlayerText.text = PhotonNetwork.CurrentRoom.CustomProperties["waitingMessage"].ToString();
+        }
+
     }
 
     /// <summary>
@@ -47,15 +52,18 @@ public class WaitingPanel : MonoBehaviour, IOnEventCallback
     public void OnEvent(EventData photonEvent)
     {
         byte eventCode = photonEvent.Code;
-        if (eventCode == Constant.PunEventCode.updateWaitingPanelUIEventCode)
+        if (eventCode == Constant.PunEventCode.theGameIsReadyEventCode)
         {
-            object[] data = (object[])photonEvent.CustomData;
-            string newText = (string)data[0];
-            waitingForPlayerText.text = newText;
-        }
-        else if (eventCode == Constant.PunEventCode.theGameIsReadyEventCode)
-        {
+            waitingForPlayerText.text = "";
             waitingBgButtons.SetActive(true);
         }
     }
+
+    public override void OnRoomPropertiesUpdate(ExitGames.Client.Photon.Hashtable propertiesThatChanged)
+    {
+        string waitingText = (string)propertiesThatChanged["waitingMessage"];
+        waitingForPlayerText.text = waitingText;
+    }
+
+   
 }
