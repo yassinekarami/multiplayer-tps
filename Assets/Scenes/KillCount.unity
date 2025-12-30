@@ -360,7 +360,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8d649b845ef576649b63b57382af6be1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxPlayersInRoom: 1
+  maxPlayersInRoom: 4
   colorSelectorPanelUI: {fileID: 0}
   waitingPanelUI: {fileID: 0}
   inGamePanelUI: {fileID: 0}

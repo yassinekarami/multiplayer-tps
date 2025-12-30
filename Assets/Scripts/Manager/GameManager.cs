@@ -110,7 +110,20 @@ namespace Manager
             Debug.Log("joined room" + PhotonNetwork.CurrentRoom + " current player " + PhotonNetwork.CurrentRoom.PlayerCount);
             colorSelectorPanelUI.SetActive(true);
             CreatePlayerEvent.onColorChoosed += CreateCharacter;
-        
+
+            
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        private void SendUpdateWaitingPanelEvent()
+        {
+            object[] content = new object[] { $"Waiting for players to join : {PhotonNetwork.CurrentRoom.PlayerCount} / {PhotonNetwork.CurrentRoom.MaxPlayers}" };
+            RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.All, CachingOption = EventCaching.AddToRoomCache };
+            PhotonNetwork.RaiseEvent(Constant.PunEventCode.updateWaitingPanelUIEventCode, content, raiseEventOptions, SendOptions.SendReliable);
+            Debug.Log("SendTheGameIsReadyEvent is send with the code " + Constant.PunEventCode.updateWaitingPanelUIEventCode);
+
         }
 
         /// <summary>
@@ -223,6 +236,9 @@ namespace Manager
                     Debug.Log("OnRoomPropertiesUpdate :readyPlayers " + (int)PhotonNetwork.CurrentRoom.CustomProperties["readyPlayers"]);
 
                     SendTheGameIsReadyEvent();
+                } else
+                {
+                    SendUpdateWaitingPanelEvent();
                 }
             }
             else
@@ -259,7 +275,10 @@ namespace Manager
                 {
                     character.color.ToString(), character.nickname
                 };
-                GameObject obj = PhotonNetwork.Instantiate("Ybot", spawnPoints[characters.IndexOf(character)].transform.position, Quaternion.identity, 0, data);
+                if (PhotonNetwork.IsMasterClient)
+                {
+                    GameObject obj = PhotonNetwork.Instantiate("Ybot", spawnPoints[Random.Range(0, spawnPoints.Count)].transform.position, Quaternion.identity, 0, data);
+                }  
             }
 
             inGamePanelUI.SetActive(true);
