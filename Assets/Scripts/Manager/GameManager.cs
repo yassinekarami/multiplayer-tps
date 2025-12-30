@@ -1,6 +1,5 @@
 using Core.Event;
 using Core.Interface.PlayerInfoUI;
-using Core.Interface.ScorePanelUI;
 using Core.Interface.WeaponUI;
 using Core.Model;
 using Core.Utils;
@@ -10,8 +9,8 @@ using Photon.Pun;
 using Photon.Realtime;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.SocialPlatforms.Impl;
 using UnityEngine.UI;
 using Hashtable = ExitGames.Client.Photon.Hashtable;
 
@@ -88,14 +87,13 @@ namespace Manager
                         GameObject pointToBeSpawnIn = queue.Dequeue();
                         if (pointToBeSpawnIn.transform.childCount == 0)
                         {
-                            GameObject obj = PhotonNetwork.Instantiate(weapon, pointToBeSpawnIn.transform.position, Quaternion.identity, 0);
+                            GameObject obj = PhotonNetwork.InstantiateRoomObject(weapon, pointToBeSpawnIn.transform.position, Quaternion.identity, 0);
                             obj.transform.parent = pointToBeSpawnIn.transform;
                         }
                     }
                     weaponSpawnTimer = 20f;
                 }
             }
-            
         }
 
         /// <summary>
@@ -118,7 +116,7 @@ namespace Manager
         {
             object[] content = new object[] { true };
             RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.All };
-            PhotonNetwork.RaiseEvent(Constant.PunEventCode.theGameIsReadyEventCode, content,  raiseEventOptions, SendOptions.SendReliable);
+            PhotonNetwork.RaiseEvent(Constant.PunEventCode.theGameIsReadyEventCode, content, raiseEventOptions, SendOptions.SendReliable);
             Debug.Log("SendTheGameIsReadyEvent is send with the code " + Constant.PunEventCode.theGameIsReadyEventCode);
             gameHaveStarted = true;
         }
@@ -173,16 +171,18 @@ namespace Manager
         /// <param name="color"></param>
         private void CreateCharacter(string nickname, Color color)
         {
-            this.characters.Add(new Character(nickname, color.ToString(), 100)); ;
-            Debug.Log("create new character "+characters.Count);
-            colorSelectorPanelUI.SetActive(false);
-            waitingPanelUI.SetActive(true);
+            this.characters.Add(new Character(nickname, color.ToString(), 100));
+            Debug.Log("create new character " + characters.Count);
 
-            string newText =  "Waiting for players to join : $ / %".Replace("$", PhotonNetwork.CountOfPlayers.ToString()).Replace("%", maxPlayersInRoom.ToString());
-            object[] content = new object[] { newText };
-            RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.All };
-            PhotonNetwork.RaiseEvent(Constant.PunEventCode.updateWaitingPanelUIEventCode, content, raiseEventOptions, SendOptions.SendReliable);
-      
+            // Met à jour l'état du joueur comme prêt
+            UpdatePlayerReadyState(true);
+
+            // Cache le panneau de sélection de couleur
+            colorSelectorPanelUI.SetActive(false);
+
+            // Vérifie si tous les joueurs sont prêts
+            //   CheckAllPlayersReady();
+            waitingPanelUI.SetActive(true);
             UpdateRoomReadyPlayer();
         }
 
@@ -214,7 +214,7 @@ namespace Manager
             if (!gameHaveStarted)
             {
                 if (PhotonNetwork.CurrentRoom.CustomProperties != null &&
-                (int)PhotonNetwork.CurrentRoom.CustomProperties["readyPlayers"] == maxPlayersInRoom)
+                    (int)PhotonNetwork.CurrentRoom.CustomProperties["readyPlayers"] == maxPlayersInRoom)
                 {
                     Debug.Log("OnRoomPropertiesUpdate :readyPlayers " + (int)PhotonNetwork.CurrentRoom.CustomProperties["readyPlayers"]);
 
@@ -228,33 +228,18 @@ namespace Manager
                 {
                     Destroy(child.gameObject);
                 }
-                float yOffset = -30; // distance between each item
+               
                 int index = 0;
                 foreach (DictionaryEntry entry in PhotonNetwork.CurrentRoom.CustomProperties)
                 {
                     if (!entry.Key.Equals("readyPlayers"))
                     {
-                        playerScore.transform.GetChild(0).GetComponent<Text>().text = (string)entry.Key;
-     
-                        playerScore.transform.GetChild(1).GetComponent<Text>().text = (string)entry.Value;
-
-                        // Apply vertical offset
-                        playerScore.GetComponent<RectTransform>().anchoredPosition +=
-                            new Vector2(0, index * yOffset);
-
-                        GameObject obj = PhotonNetwork.Instantiate("playerScore", scorePanelUI.transform.position, Quaternion.identity, 0);
-                        obj.transform.parent = scorePanelUI.transform;
-
-                        index++;
-                    } 
+                        InstantiateScorePanelForeachPlayer((string)entry.Key, (string)entry.Value, index);
+                        index++;       
+                    }
                 }
-              
-
-              
-
                 Debug.Log("OnRoomPropertiesUpdate : other property changed");
             }
-           
         }
         /// <summary>
         /// enable the level and instantiate the character through the network
@@ -270,42 +255,43 @@ namespace Manager
                 {
                     character.color.ToString(), character.nickname
                 };
-                Queue<GameObject> queue = new Queue<GameObject>(spawnPoints);
-                GameObject obj = PhotonNetwork.Instantiate("Ybot", queue.Dequeue().transform.position, Quaternion.identity, 0, data);
-                obj.name = character.nickname;
+                GameObject obj = PhotonNetwork.Instantiate("Ybot", spawnPoints[characters.IndexOf(character)].transform.position, Quaternion.identity, 0, data);
             }
 
             inGamePanelUI.SetActive(true);
         }
 
         /// <summary>
-        /// 
+        /// It trigger when an event is received
+        /// it's executed only by the master client, and update the score of the killed player
         /// </summary>
         /// <param name="photonEvent"></param>
         public void OnEvent(EventData photonEvent)
         {
-            byte eventCode = photonEvent.Code;
-            if (eventCode == Constant.PunEventCode.playerHaveBeenKilledEventCode)
+            if (PhotonNetwork.IsMasterClient)
             {
-                object[] data = (object[])photonEvent.CustomData;
-                string nickname = (string)data[0];
-                int score = (int)data[1];
-                string killedNickname = (string)data[2];
-
-                StartCoroutine(ResetKilledPlayer(killedNickname));
-                ExitGames.Client.Photon.Hashtable properties = PhotonNetwork.CurrentRoom.CustomProperties;
-                if (properties != null)
+                byte eventCode = photonEvent.Code;
+                if (eventCode == Constant.PunEventCode.playerHaveBeenKilledEventCode)
                 {
-                    if (properties.ContainsKey(nickname))
+                    object[] data = (object[])photonEvent.CustomData;
+                    string nickname = (string)data[0];
+                    int score = (int)data[1];
+                    string killedNickname = (string)data[2];
+
+                    StartCoroutine(ResetKilledPlayer(killedNickname, spawnPoints[Random.Range(0, spawnPoints.Count)].transform.position));
+                    ExitGames.Client.Photon.Hashtable properties = PhotonNetwork.CurrentRoom.CustomProperties;
+                    if (properties != null)
                     {
-                        Debug.Log("Score Updated: " + properties[nickname]);
-                        properties[nickname] = score.ToString();
+                        if (properties.ContainsKey(nickname))
+                        {
+                            properties[nickname] = score.ToString();
+                        }
+                        else
+                        {
+                            properties.Add(nickname, score.ToString());
+                        }
+                        PhotonNetwork.CurrentRoom.SetCustomProperties(properties);
                     }
-                    else
-                    {
-                        properties.Add(nickname, score.ToString());
-                    }
-                    PhotonNetwork.CurrentRoom.SetCustomProperties(properties);
                 }
             }
         }
@@ -319,54 +305,68 @@ namespace Manager
         /// no action is taken.</remarks>
         /// <param name="name">The name of the player GameObject to reset. Must correspond to an existing GameObject in the scene.</param>
         /// <returns>An enumerator that performs the reset operation after a delay. Intended for use with Unity coroutines.</returns>
-        IEnumerator ResetKilledPlayer(string name)
+        IEnumerator ResetKilledPlayer(string name, Vector3 spawnPoint)
         {
-            Debug.Log("ResetKilledPlayer for " + name);
             GameObject player = GameObject.Find(name);
-            Debug.Log("Found player: " + player);
-            Debug.Log(" PlayerStates " + player.GetComponent<PlayerStates>());
             yield return new WaitForSeconds(2);
         
-            if (player && player.GetComponents<PlayerStates>() != null)
+            if (player && player.GetComponent<PlayerStates>() != null)
             {
-            //    player.GetComponents<PlayerStates>().ResetPlayer(spawnPoints[Random.Range(0, spawnPoints.Count)].transform.position);
-                photonView.RPC("ResetPlayer", RpcTarget.All, spawnPoints[Random.Range(0, spawnPoints.Count)].transform.position);
+                player.GetComponent<PlayerStates>().photonView.RPC("RPC_ResetPlayer", RpcTarget.All, spawnPoint);
             }
 
         }
 
         /// <summary>
-        /// instantiate nickname and health bar for each character present in the room
+        /// Instantiate a score panel for each player with their nickname and score.
         /// </summary>
-        /// <param name="characters"></param>
-        public void InstantiateScorePanelForeachPlayer(string nickname, string score)
+        /// <param name="nickname"></param>
+        /// <param name="score"></param>
+        public void InstantiateScorePanelForeachPlayer(string nickname, string score, int index)
         {
-            float yOffset = -30; // distance entre chaque élément
-            int index = 0;
+            float yOffset = -30f; // négatif = vers le bas
 
-            Debug.Log($"Key: {nickname}, Value: {score}");
+            GameObject toInstantiate = Instantiate(playerScore, scorePanelUI.transform);
 
-            // Vérifie si les composants nécessaires existent avant de les utiliser
-            Text nicknameText = playerScore.transform.GetChild(0).GetComponent<Text>();
-            Text scoreText = playerScore.transform.GetChild(1).GetComponent<Text>();
+            Text nicknameText = toInstantiate.transform.GetChild(0).GetComponent<Text>();
+            Text scoreText = toInstantiate.transform.GetChild(1).GetComponent<Text>();
 
-            if (nicknameText != null && scoreText != null)
+            if (nicknameText == null || scoreText == null)
             {
-                GameObject toInstantiate = Instantiate(playerScore, gameObject.transform);
-                toInstantiate.transform.parent = scorePanelUI.transform;
-
-                // Applique un décalage vertical
-                toInstantiate.GetComponent<RectTransform>().anchoredPosition +=
-                    new Vector2(0, index * yOffset);
-
-                index++;
+                Debug.LogError("Nickname or Score Text component is missing on the score prefab.");
+                Destroy(toInstantiate);
+                return;
             }
-            else
-            {
-                Debug.LogError("Nickname or Score Text component is missing on the score GameObject.");
-            }
+
+            nicknameText.text = nickname;
+            scoreText.text = score;
+
+            RectTransform rt = toInstantiate.GetComponent<RectTransform>();
+            rt.anchoredPosition = new Vector2(0f, index * yOffset);
         }
 
+        /// <summary>
+        /// Calls an RPC to destroy a pickup item across the network using its view ID.
+        /// </summary>
+        /// <param name="viewId"></param>
+        public void DestroyPickup(int viewId)
+        {
+            photonView.RPC("RPC_DestroyPickup", RpcTarget.MasterClient, viewId);
+        }
+        /// <summary>
+        /// Find the gameObject with its viewId and destroy it across the network.
+        /// </summary>
+        /// <param name="viewId"></param>
+        [PunRPC]
+        public void RPC_DestroyPickup(int viewId)
+        {
+            if (!PhotonNetwork.IsMasterClient) return;
+
+            PhotonView pv = PhotonView.Find(viewId);
+            if (pv == null) return;
+            GameObject toBeDestroyed = pv.gameObject;
+            PhotonNetwork.Destroy(toBeDestroyed);
+        }
         /// <summary>
         /// Toggles the visibility of the score panel user interface.
         /// </summary>
@@ -383,6 +383,13 @@ namespace Manager
             {
                 scorePanelUI.SetActive(true);
             }
+        }
+
+        private void UpdatePlayerReadyState(bool isReady)
+        {
+            Hashtable props = PhotonNetwork.LocalPlayer.CustomProperties;
+            props["isReady"] = isReady;
+            PhotonNetwork.LocalPlayer.SetCustomProperties(props);
         }
     }
 }

@@ -23,7 +23,6 @@ namespace Core.Utils
             public const byte theGameIsReadyEventCode = 2;
             public const byte setUpPlayerInfoPanelEventCode = 3;
             public const byte colorHasBeenChooseEventCode = 4;
-            public const byte weaponHasBeenPickupEventCode = 5;
             public const byte updatePlayerHealthUIEventCode = 6;
             public const byte playerHaveBeenKilledEventCode = 7;
         }

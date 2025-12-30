@@ -15,7 +15,7 @@ namespace Core.Interface.PlayerInfoUI
         /// </summary>
         /// <param name="nickName">The nickname of the player associated with the notification. Cannot be null.</param>
         /// <param name="currentHealth">The current health value of the player. Typically expected to be a non-negative number.</param>
-        public void OnNotify(string nickName, float currentHealth);
+        public void OnNotifyToModifyTheHealthBar(string nickName, float currentHealth);
     }
 
 }

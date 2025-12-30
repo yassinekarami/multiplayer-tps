@@ -28,7 +28,6 @@ namespace Game.Shared.Gameplay
         public GameObject aimReference;
         public GameObject crossHair;
 
-        float xRotation = 0f;
         private Vector3 velocity;
 
 
@@ -117,13 +116,11 @@ namespace Game.Shared.Gameplay
         private void ChangeWeapon()
         {
             weaponParent.GetComponent<WeaponHandler>().ChangeWeapon();
-            // notify weapon UI observers
         }
 
         private void OpenScorePanel()
         {
             GameManager.ToggleScorePanel();
-
         }
     }
 

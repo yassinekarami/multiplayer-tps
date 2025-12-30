@@ -58,6 +58,8 @@ MonoBehaviour:
   - RPC_DecreaseHealth
   - ResetPlayer
   - RPC_SetButtonInteractable
+  - RPC_ResetPlayer
+  - RPC_DestroyPickup
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 1

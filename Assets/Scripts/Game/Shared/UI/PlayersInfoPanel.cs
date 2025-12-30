@@ -78,7 +78,9 @@ namespace Game.Shared.UI
         /// <param name="photonEvent"></param>
         public void OnEvent(EventData photonEvent)
         {
+
             byte eventCode = photonEvent.Code;
+            Debug.Log("onEvent received code " + eventCode);
             if (eventCode == Constant.PunEventCode.setUpPlayerInfoPanelEventCode)
             {
                 object[] customData = (object[])photonEvent.CustomData;
@@ -144,9 +146,9 @@ namespace Game.Shared.UI
         /// handling logic.
         /// </summary>
         /// <exception cref="System.NotImplementedException">Thrown if the method is called on a base class instance where it has not been implemented.</exception>
-        public void OnNotify(string nickName, float currentHealth)
+        public void OnNotifyToModifyTheHealthBar(string nickName, float currentHealth)
         {
-            Debug.Log("Player info panel notified of a change.");
+            Debug.Log("Player info panel notified of a change. event is sent with code "+ Constant.PunEventCode.updatePlayerHealthUIEventCode);
             object[] content = new object[] { nickName, currentHealth };
             RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.All };
             PhotonNetwork.RaiseEvent(Constant.PunEventCode.updatePlayerHealthUIEventCode, content.ToArray(), raiseEventOptions, SendOptions.SendReliable);

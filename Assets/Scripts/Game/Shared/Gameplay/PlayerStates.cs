@@ -5,6 +5,7 @@ using ExitGames.Client.Photon;
 using Manager;
 using Photon.Pun;
 using Photon.Realtime;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 namespace Game.Shared.Gameplay
@@ -13,64 +14,97 @@ namespace Game.Shared.Gameplay
     {
         public Character character;
 
-
-        private bool isDead = false;
         private PlayerControls playerControls;
+        public PhotonView photonView;
 
+        /// <summary>
+        /// This method is called when the Photon network instantiates this object.
+        /// </summary>
+        /// <param name="info"></param>
 
         public void OnPhotonInstantiate(PhotonMessageInfo info)
         {
             object[] instantiationData = info.photonView.InstantiationData;
             character = new Character((string)instantiationData[1], (string)instantiationData[0], 100);
+            gameObject.name = character.nickname;
             gameObject.GetComponentInChildren<Renderer>().material.color = ColorUtils.ParseRGBA(character.color);
             playerControls = GetComponent<PlayerControls>();
             GameManager.playerInfoSubjects.Add(this);
+
+            photonView = GetComponent<PhotonView>();
         }
 
+
+        /// <summary>
+        /// Decreases the player's health by the specified amount and notifies observers of the change.
+        /// if the health drops to zero or below, marks the player as dead.
+        /// </summary>
+        /// <param name="amount"></param>
+        /// <returns></returns>
+        public bool decreaseHealth(int amount)
+        {
+            character.isDead = this.character.decreaseHealth(amount);
+
+            this.NotifyObserversToModifyTheHealthBar(character.nickname, character.currentHealth);
+            return character.isDead;
+        }
+
+        /// <summary>
+        /// RPC method to reset the player's state, including health and position.
+        /// </summary>
+        /// <param name="spawnPoint"></param>
         [PunRPC]
-        public void ResetPlayer(Vector3 spawnPoint)
+        public void RPC_ResetPlayer(Vector3 spawnPoint)
         {
             this.character.currentHealth = this.character.maxHealth;
             GetComponent<Transform>().position = spawnPoint;
-            this.NotifyObservers(character.nickname, character.currentHealth);
-            isDead = false;
+            this.NotifyObserversToModifyTheHealthBar(character.nickname, character.currentHealth);
+            character.isDead = false;
             playerControls.enabled = true;
             playerControls.animator.Rebind();
         }
 
-        public bool decreaseHealth(int amount)
-        {
-            isDead = this.character.decreaseHealth(amount);
-
-            this.NotifyObservers(character.nickname, character.currentHealth);
-            return isDead;
-        }
-
+        /// <summary>
+        /// RPC method to decrease the player's health by a specified damage amount.
+        /// </summary>
+        /// <param name="damage"></param>
+        /// <param name="killedPlayerNickname"></param>
         [PunRPC]
-        public void RPC_DecreaseHealth(int damage, string attackerNickname)
+        public void RPC_DecreaseHealth(int damage, string killedPlayerNickname)
         {
-            if (GetComponent<PhotonView>().IsMine)
+            Debug.Log($"RPC_DecreaseHealth called on {character.nickname} for {damage} damage by {killedPlayerNickname}");
+            if (!photonView.IsMine) return;
+            if (!character.isDead)
             {
-                bool isDead = this.decreaseHealth(damage);
-                if (isDead)
+                character.isDead = this.decreaseHealth(damage);
+                if (character.isDead)
                 {
                     playerControls.animator.SetTrigger("isDead");
                     playerControls.enabled = false;
-                    Debug.Log($"{attackerNickname} a tué {this.character.nickname}");
-                    int score = character.score + 1;
+                    Debug.Log($"{this.character.nickname} a tué {killedPlayerNickname}");
 
-                    object[] content = new object[] { character.nickname, character.score + 1, gameObject.name };
+                    int score = character.increaseScoreByValue(1);
+
+                    object[] content = new object[] { killedPlayerNickname, score, gameObject.name };
                     RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.All };
                     PhotonNetwork.RaiseEvent(Constant.PunEventCode.playerHaveBeenKilledEventCode, content, raiseEventOptions, SendOptions.SendReliable);
                 }
                 else
                 {
-                    playerControls.animator.Play("Rib Hit");
+                    StartCoroutine(PlayHitAnimation());
                 }
             }
-                
+        }
 
-            
+        /// <summary>
+        /// Plays the hit animation for the player.
+        /// and after a delay, resets the hit trigger .
+        /// </summary>
+        /// <returns></returns>
+        IEnumerator PlayHitAnimation()         {
+            playerControls.animator.SetTrigger("isHit");
+            yield return new WaitForSeconds(0.5f);
+            playerControls.animator.ResetTrigger("isHit");
         }
 
         public void RegisterObserver(IPlayerInfoObserver observer)
@@ -86,11 +120,11 @@ namespace Game.Shared.Gameplay
         {
             GameManager.playerInfoObservers.Remove(observer);
         }
-        public void NotifyObservers(string nickName, float currentHealth)
+        public void NotifyObserversToModifyTheHealthBar(string nickName, float currentHealth)
         {
             foreach (var obs in GameManager.playerInfoObservers)
             {
-                obs.OnNotify(nickName, currentHealth);
+                obs.OnNotifyToModifyTheHealthBar(nickName, currentHealth);
             }
         }
     }

@@ -19,12 +19,19 @@ namespace Core.Model
 
         public Character(string nickname, string color, int maxHealth)
         {
+            this.score = 0;
             this.nickname = nickname;
             this.color = color;
-            this.currentHealth = maxHealth;
+            this.maxHealth = maxHealth;
+            this.currentHealth = this.maxHealth;
             this.isDead = false;
         }
 
+        public int increaseScoreByValue(int amount)
+        {
+            score = score + amount;
+            return score;
+        }
         public bool decreaseHealth(int amount)
         {   
 

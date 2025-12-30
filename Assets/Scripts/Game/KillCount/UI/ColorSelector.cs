@@ -21,6 +21,8 @@ namespace Game.KillCount.UI
         /// </summary>
         private PhotonView photonView;
 
+        private bool hasSelectedColor = false;
+
         private void OnEnable()
         {
             PhotonNetwork.AddCallbackTarget(this);
@@ -36,7 +38,10 @@ namespace Game.KillCount.UI
         /// </summary>
         public void RedColorChoosed()
         {
-            object[] content = new object[] { "RedButton" };
+            if (hasSelectedColor) return; // Empêche une double sélection
+
+            hasSelectedColor = true; // Marque le joueur comme ayant sélectionné une couleur
+            object[] content = new object[] { "RedButton", PhotonNetwork.LocalPlayer.NickName };
             RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.All };
             PhotonNetwork.RaiseEvent(Constant.PunEventCode.colorHasBeenChooseEventCode, content, raiseEventOptions, SendOptions.SendReliable);
         }
@@ -46,7 +51,11 @@ namespace Game.KillCount.UI
         /// </summary>
         public void GreenColorChoosed()
         {
-            object[] content = new object[] { "GreenButton" };
+
+            if (hasSelectedColor) return; // Empêche une double sélection
+
+            hasSelectedColor = true; // Marque le joueur comme ayant sélectionné une couleur
+            object[] content = new object[] { "GreenButton", PhotonNetwork.LocalPlayer.NickName };
             RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.All };
             PhotonNetwork.RaiseEvent(Constant.PunEventCode.colorHasBeenChooseEventCode, content, raiseEventOptions, SendOptions.SendReliable);
         }
@@ -56,7 +65,10 @@ namespace Game.KillCount.UI
         /// </summary>
         public void OrangeColorChoosed()
         {
-            object[] content = new object[] { "OrangeButton",  };
+            if (hasSelectedColor) return; // Empêche une double sélection
+
+            hasSelectedColor = true; // Marque le joueur comme ayant sélectionné une couleur
+            object[] content = new object[] { "OrangeButton", PhotonNetwork.LocalPlayer.NickName };
             RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.All };
             PhotonNetwork.RaiseEvent(Constant.PunEventCode.colorHasBeenChooseEventCode, content, raiseEventOptions, SendOptions.SendReliable);
         }
@@ -66,7 +78,10 @@ namespace Game.KillCount.UI
         /// </summary>
         public void PurpleColorChoosed()
         {
-            object[] content = new object[] { "PurpleButton" };
+            if (hasSelectedColor) return; // Empêche une double sélection
+
+            hasSelectedColor = true; // Marque le joueur comme ayant sélectionné une couleur
+            object[] content = new object[] { "PurpleButton", PhotonNetwork.LocalPlayer.NickName };
             RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.All };
             PhotonNetwork.RaiseEvent(Constant.PunEventCode.colorHasBeenChooseEventCode, content, raiseEventOptions, SendOptions.SendReliable);
         }
@@ -76,7 +91,10 @@ namespace Game.KillCount.UI
         /// </summary>
         public void BlueColorChoosed()
         {
-            object[] content = new object[] { "BlueButton" };
+            if (hasSelectedColor) return; // Empêche une double sélection
+
+            hasSelectedColor = true; // Marque le joueur comme ayant sélectionné une couleur
+            object[] content = new object[] { "BlueButton", PhotonNetwork.LocalPlayer.NickName };
             RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.All };
             PhotonNetwork.RaiseEvent(Constant.PunEventCode.colorHasBeenChooseEventCode, content, raiseEventOptions, SendOptions.SendReliable);
         }
@@ -86,7 +104,10 @@ namespace Game.KillCount.UI
         /// </summary>
         public void GreyColorChoosed()
         {
-            object[] content = new object[] { "GreyButton" };
+            if (hasSelectedColor) return; // Empêche une double sélection
+
+            hasSelectedColor = true; // Marque le joueur comme ayant sélectionné une couleur
+            object[] content = new object[] { "GreyButton", PhotonNetwork.LocalPlayer.NickName };
             RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.All };
             PhotonNetwork.RaiseEvent(Constant.PunEventCode.colorHasBeenChooseEventCode, content, raiseEventOptions, SendOptions.SendReliable);
         }
@@ -94,22 +115,21 @@ namespace Game.KillCount.UI
         public void OnEvent(EventData photonEvent)
         {
             byte eventCode = photonEvent.Code;
-         
+
             if (eventCode == Constant.PunEventCode.colorHasBeenChooseEventCode)
             {
                 object[] data = (object[])photonEvent.CustomData;
                 string button = (string)data[0];
+                string playerName = (string)data[1];
 
-                try
-                {
-                    photonView.RPC("RPC_SetButtonInteractable", RpcTarget.AllBuffered, button, false);
-                    CreatePlayerEvent.onColorChoosed?.Invoke(PhotonNetwork.LocalPlayer.NickName, ColorUtils.ResolveColorFromString(button));
+                // Synchronise l'état des boutons pour tous les clients
+                photonView.RPC("RPC_SetButtonInteractable", RpcTarget.AllBuffered, button, false);
 
-                } catch (System.Exception e)
+                // Exécute la logique uniquement pour le joueur local
+                if (playerName == PhotonNetwork.LocalPlayer.NickName)
                 {
-                    Debug.LogError("Error processing color choice event: " + e.Message);
+                    CreatePlayerEvent.onColorChoosed?.Invoke(playerName, ColorUtils.ResolveColorFromString(button));
                 }
-              
             }
         }
 

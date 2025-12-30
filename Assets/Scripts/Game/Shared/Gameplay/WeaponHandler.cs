@@ -1,18 +1,12 @@
-using Core.Event;
 using Core.Interface.WeaponUI;
 using Core.Model;
-using Core.Utils;
-using ExitGames.Client.Photon;
-using ExitGames.Client.Photon.StructWrapping;
 using Manager;
 using Photon.Pun;
-using Photon.Realtime;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.SocialPlatforms.Impl;
 using static Core.Utils.Constant;
+
 namespace Game.Shared.Gameplay {
 
     public class WeaponHandler : MonoBehaviour, IWeaponUISubject
@@ -75,21 +69,16 @@ namespace Game.Shared.Gameplay {
                 audioSource.PlayOneShot(weaponsSound[currentWeapon.weaponSoundIndex]);
                 RaycastHit hit;
                 Physics.Raycast(playerCamera.ScreenPointToRay(Input.mousePosition), out hit, 100);
-                if (hit.collider != null)
+                if (hit.collider != null && hit.collider.gameObject.transform != gameObject.transform.root)
                 {
                     Debug.Log(hit.collider);
                  
                     if (hit.collider.gameObject.GetComponentInParent<PlayerStates>() != null)
                     {
-                       
-                        if (hit.collider.gameObject.GetComponentInParent<PlayerStates>() != null)
+                        PhotonView targetPhotonView = hit.collider.gameObject.GetComponentInParent<PhotonView>();
+                        if (targetPhotonView != null)
                         {
-                            PhotonView targetPhotonView = hit.collider.gameObject.GetComponentInParent<PhotonView>();
-                            if (targetPhotonView != null)
-                            {
-                                // Appeler le RPC pour synchroniser la santé
-                                targetPhotonView.RPC("RPC_DecreaseHealth", RpcTarget.All, currentWeapon.damage, playerStates.character.nickname);
-                            }
+                            targetPhotonView.RPC("RPC_DecreaseHealth", targetPhotonView.Owner, currentWeapon.damage, playerStates.character.nickname);
                         }
                     }
                 }

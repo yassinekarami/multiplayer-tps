@@ -38,7 +38,7 @@ namespace Core.Interface.PlayerInfoUI
         /// </summary>
         /// <param name="nickName">The nickname of the player whose health has changed. Cannot be null or empty.</param>
         /// <param name="currentHealth">The player's current health value after the change.</param>
-        public void NotifyObservers(string nickName, float currentHealth);
+        public void NotifyObserversToModifyTheHealthBar(string nickName, float currentHealth);
         
     }
 }
