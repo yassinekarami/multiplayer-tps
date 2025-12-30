@@ -323,9 +323,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1156553944}
-  - component: {fileID: 1156553945}
   - component: {fileID: 1156553946}
   - component: {fileID: 1156553947}
+  - component: {fileID: 1156553948}
   m_Layer: 0
   m_Name: Manager
   m_TagString: Untagged
@@ -348,26 +348,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1156553945
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1156553943}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8d649b845ef576649b63b57382af6be1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  maxPlayersInRoom: 1
-  colorSelectorPanelUI: {fileID: 0}
-  waitingPanelUI: {fileID: 0}
-  inGamePanelUI: {fileID: 0}
-  level: {fileID: 0}
-  playerScore: {fileID: 1970184525883865422, guid: 5ea736e9654e98b4685ae74a0bb597c3,
-    type: 3}
-  weaponSpawnPoints: []
 --- !u!114 &1156553946
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -402,6 +382,25 @@ MonoBehaviour:
   sceneViewId: 3
   InstantiationId: 0
   isRuntimeInstantiated: 0
+--- !u!114 &1156553948
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1156553943}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 29a33603295fcd747ace9326fc3305c3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxPlayersInRoom: 2
+  colorSelectorPanelUI: {fileID: 0}
+  waitingPanelUI: {fileID: 0}
+  inGamePanelUI: {fileID: 0}
+  level: {fileID: 0}
+  playerScore: {fileID: 0}
+  weaponSpawnPoints: []
 --- !u!1 &1181136878
 GameObject:
   m_ObjectHideFlags: 3
@@ -596,7 +595,17 @@ PrefabInstance:
         type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 1156553945}
+      objectReference: {fileID: 1156553948}
+    - target: {fileID: 2912683461279293339, guid: 0c5ade33a406ac842b812c2479eaba28,
+        type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: EnableLevel
+      objectReference: {fileID: 0}
+    - target: {fileID: 2912683461279293339, guid: 0c5ade33a406ac842b812c2479eaba28,
+        type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: NoRespawnGameManager, Assembly-CSharp
+      objectReference: {fileID: 0}
     - target: {fileID: 5603846626296149048, guid: 0c5ade33a406ac842b812c2479eaba28,
         type: 3}
       propertyPath: m_Pivot.x
@@ -712,13 +721,7 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 8769694093772446842, guid: 0c5ade33a406ac842b812c2479eaba28,
-        type: 3}
-      propertyPath: m_SynchronizeScale
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents:
-    - {fileID: 8769694093772446842, guid: 0c5ade33a406ac842b812c2479eaba28, type: 3}
+    m_RemovedComponents: []
     m_RemovedGameObjects:
     - {fileID: 1004932393488978688, guid: 0c5ade33a406ac842b812c2479eaba28, type: 3}
     m_AddedGameObjects: []

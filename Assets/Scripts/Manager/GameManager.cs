@@ -87,8 +87,12 @@ namespace Manager
                         GameObject pointToBeSpawnIn = queue.Dequeue();
                         if (pointToBeSpawnIn.transform.childCount == 0)
                         {
-                            GameObject obj = PhotonNetwork.InstantiateRoomObject(weapon, pointToBeSpawnIn.transform.position, Quaternion.identity, 0);
-                            obj.transform.parent = pointToBeSpawnIn.transform;
+                            if (PhotonNetwork.IsMasterClient)
+                            {
+                                GameObject obj = PhotonNetwork.InstantiateRoomObject(weapon, pointToBeSpawnIn.transform.position, Quaternion.identity, 0);
+                                obj.transform.parent = pointToBeSpawnIn.transform;
+                            }
+                          
                         }
                     }
                     weaponSpawnTimer = 20f;
